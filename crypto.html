@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080b18">
+<meta name="description" content="MarketPulse Crypto tracks crypto prices and volume with interactive charts.">
+<title>MarketPulse Crypto | Digital Assets</title>
+<style>
+:root{color-scheme:dark;--bg:#080b18;--panel:#101528;--line:#293354;--text:#f2f4ff;--muted:#b0bbd7;--cyan:#76f5f3;--violet:#bda5ff}
+*{box-sizing:border-box}body{margin:0;font:15px/1.55 system-ui,sans-serif;color:var(--text);background:var(--bg)}a{color:var(--cyan)}a:hover{text-decoration:none}button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}.wrap{width:min(1280px,calc(100% - 32px));margin:auto}header{background:#0b1021;border-bottom:1px solid var(--line)}header .wrap{min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:12px}header strong{letter-spacing:-.03em;font-size:18px}header a{font-size:14px}header span{color:var(--cyan)}
+.hero{position:relative;overflow:hidden;isolation:isolate;border-bottom:1px solid var(--line);padding:clamp(32px,7vw,76px) 0;background:radial-gradient(ellipse at 90% 30%,#30215e,transparent 55%),linear-gradient(125deg,#111b33,#090c19 64%)}.hero:after{position:absolute;inset:0;z-index:-1;content:'';background:repeating-linear-gradient(90deg,transparent 0 35px,#a89aff18 36px 37px),repeating-linear-gradient(0deg,transparent 0 35px,#a89aff18 36px 37px);mask-image:linear-gradient(90deg,transparent 30%,black)}h1{font-size:clamp(38px,8vw,88px);line-height:1;letter-spacing:-.065em;margin:0;color:var(--text)}h1 span{color:var(--violet)}.hero p{margin:14px 0 0;color:var(--muted);max-width:49ch}main{padding:20px 0 40px}.panel{margin-top:16px;border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;box-shadow:0 10px 35px #03051155}.head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--line)}h2{font-size:18px;margin:0}.controls{display:flex;gap:8px;flex-wrap:wrap}button{font:600 13px system-ui,sans-serif;min-height:42px;color:var(--muted);background:#171e36;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}button[aria-pressed=true],button:hover{color:var(--cyan);border-color:var(--cyan)}.chart{height:560px}.tape{height:80px}.tradingview-widget-container{height:100%;width:100%}.tradingview-widget-container__widget{height:calc(100% - 26px);width:100%}.credit{text-align:right;padding:2px 12px;font-size:12px}.chart p,.tape p{padding:8px 16px;color:var(--muted)}footer{padding:16px 0 28px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}@media(max-width:660px){.chart{height:445px}.head{align-items:flex-start}.wrap{width:calc(100% - 24px)}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><strong>MarketPulse <span>Crypto</span></strong><a href="./">← U.S. stocks</a></div></header>
+<section class="hero"><div class="wrap"><h1>Crypto <span>markets</span></h1><p>Track prices and volume across major digital assets. Select a coin to open its USD chart.</p></div></section>
+<main class="wrap">
+<div class="panel tape" id="ticker" aria-label="Crypto quote ticker"></div>
+<section class="panel" aria-labelledby="chart-title">
+<div class="head"><h2 id="chart-title">Bitcoin price &amp; volume</h2><div class="controls" role="group" aria-label="Choose a cryptocurrency" id="coins"></div></div>
+<div class="chart" id="chart"><noscript><p><a href="https://www.tradingview.com/markets/cryptocurrencies/prices-all/">View crypto prices on TradingView</a></p></noscript></div>
+</section>
+</main>
+<footer><div class="wrap">Quotes and charts by <a href="https://www.tradingview.com/markets/cryptocurrencies/prices-all/">TradingView</a>. Coverage and delays vary by exchange.</div></footer>
+<script>
+const assets = [
+  {code:'BTC',name:'Bitcoin',symbol:'COINBASE:BTCUSD'},
+  {code:'ETH',name:'Ethereum',symbol:'COINBASE:ETHUSD'},
+  {code:'SOL',name:'Solana',symbol:'COINBASE:SOLUSD'},
+  {code:'XRP',name:'XRP',symbol:'COINBASE:XRPUSD'},
+  {code:'DOGE',name:'Dogecoin',symbol:'COINBASE:DOGEUSD'}
+];
+function embed(host, type, settings, fallbackUrl) {
+  const container = document.createElement('div');
+  container.className = 'tradingview-widget-container';
+  const widget = document.createElement('div');
+  widget.className = 'tradingview-widget-container__widget';
+  const credit = document.createElement('div');
+  credit.className = 'credit';
+  const link = document.createElement('a');
+  link.href = fallbackUrl;
+  link.textContent = 'Open on TradingView';
+  credit.append(link);
+  const script = document.createElement('script');
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-' + type + '.js';
+  script.async = true;
+  script.textContent = JSON.stringify(settings);
+  script.onerror = () => {
+    const message = document.createElement('p');
+    message.textContent = 'The widget is unavailable. Use the TradingView link to open the data.';
+    widget.replaceChildren(message);
+  };
+  container.append(widget,credit,script);
+  document.getElementById(host).replaceChildren(container);
+}
+function showAsset(asset) {
+  document.getElementById('chart-title').textContent = asset.name + ' price & volume';
+  for (const button of buttons) {
+    button.setAttribute('aria-pressed', String(button.textContent === asset.code));
+  }
+  embed('chart','advanced-chart',{
+    autosize:true,symbol:asset.symbol,interval:'60',timezone:'Etc/UTC',theme:'dark',style:'1',locale:'en',
+    allow_symbol_change:false,withdateranges:true,hide_side_toolbar:true,studies:['Volume@tv-basicstudies']
+  },'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(asset.symbol));
+}
+const buttons = assets.map(asset => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = asset.code;
+  button.addEventListener('click', () => showAsset(asset));
+  document.getElementById('coins').append(button);
+  return button;
+});
+embed('ticker','ticker-tape',{
+  symbols:assets.map(({symbol,name}) => ({proName:symbol,title:name})),
+  colorTheme:'dark',isTransparent:true,displayMode:'adaptive',showSymbolLogo:true,locale:'en'
+},'https://www.tradingview.com/markets/cryptocurrencies/prices-all/');
+showAsset(assets[0]);
+</script>
+</body>
+</html>
